@@ -3,9 +3,13 @@
 #include <iostream>
 #include <array>
 #include <iterator>
-#include <vectora>
+#include <vector>
 #include <algorithm>
+#include <tuple>
+#include <cmath>
+#include <cassert>
 
+//------------------------------------------------------------------------------
 template < typename ScalarT >
 struct Vector3D {
     using Scalar = ScalarT;
@@ -28,7 +32,6 @@ Vector3D< ScalarT > operator+(const Vector3D< ScalarT >& c1,
     return Vector3D< ScalarT >(c1[0] + c2[0], c1[1] + c2[1], c1[2] + c2[2]);
 }
 
-
 template < typename ScalarT >
 Vector3D< ScalarT > operator-(const Vector3D< ScalarT >& c1,
                            const Vector3D< ScalarT >& c2) {
@@ -44,7 +47,6 @@ template < typename ScalarT >
 Vector3D< ScalarT > operator*(const Vector3D< ScalarT >& c, ScalarT s) {
     return Vector3D< ScalarT >(s * c[0], s * c[1], s * c[2]);
 }
-
 
 template < typename ScalarT >
 std::ostream& operator<<(std::ostream& os, const Vector3D< ScalarT >& c) {
@@ -62,6 +64,7 @@ ScalarT Dist(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
     return std::sqrt(Dot(v1, v2));
 }
 
+//------------------------------------------------------------------------------
 template < typename FwdIt >
 std::vector< typename std::iterator_traits< FwdIt >::value_type > 
 ComputeDistances(FwdIt begin, FwdIt end) {
@@ -99,7 +102,7 @@ Extract(const std::vector< ScalarT >& dist,
         const std::vector< Vector3D< ScalarT > >& points,//size = dist.size + 4,
         ScalarT t) {
    using V = Vector3D< ScalarT >;
-   using T = std::tuple< V, V, V, V, ScalarT >; 
+   using T = std::tuple< const V&, const V&, const V&, const V&, ScalarT >;
    const std::size_t p = FindPos(dist, t);
    const std::size_t pidx1 = p + 2;
    const std::size_t pidx0 = pidx1 - 1;
@@ -107,8 +110,10 @@ Extract(const std::vector< ScalarT >& dist,
    const std::size_t pidx3 = pidx3 + 1;
    const ScalarT u = (t * dist.back() - dist[p]) 
                      / Dist(points[pidx1], points[pidx2]);
-   return T(points[pidx0], points[pidx1])
-    
+   return T(points[pidx0], points[pidx1], points[pidx2], points[pidx3], u);
+}
+
+//------------------------------------------------------------------------------
 template < typename ScalarT >
 Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P0,
@@ -122,4 +127,19 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
     return ((c3 * u + c2) * u + c1) * u + c0;
 }
 
-Vector3D< ScalarT > 
+//------------------------------------------------------------------------------
+template < ScalarT >
+Vector3D< ScalarT > CRomInterpolate(const std::vector< ScalarT >& points 
+                                    const std::vector< ScalarT >& dist,
+                                    ScalarT t) {
+    assert(points.size());
+    assert(dist.size());
+    assert(t >= ScalarT(0) && t <= ScalarT(1));
+    assert(points.size() == dist.size() + 4);
+    using V = Vector3D< ScalarT >;
+    using T = std::tuple< const V&, const V&, const V&, const V&, ScalarT >; 
+    const T p = Extract(dist, points, t);
+    return CatmullRom(t, std::get<0>(p), 
+                      std::get<1>(p), std::get<2>(p), std::get<3>(p), 
+                      std::get<4>(p));
+}
