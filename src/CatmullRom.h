@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <array>
 #include <iterator>
 #include <vector>
 #include <algorithm>
@@ -9,60 +7,7 @@
 #include <cmath>
 #include <cassert>
 
-//------------------------------------------------------------------------------
-template < typename ScalarT >
-struct Vector3D {
-    using Scalar = ScalarT;
-    std::array< ScalarT, 3 > data_;
-    Vector3D(ScalarT r = ScalarT(0), 
-          ScalarT g = ScalarT(0), 
-          ScalarT b = ScalarT(0)) {
-        data_[0] = r;
-        data_[1] = g;
-        data_[2] = b;
-    }
-    Vector3D(const Vector3D&) = default;
-    Vector3D(Vector3D&&) = default;
-    ScalarT operator[](std::size_t i) const { return data_[i]; }
-};
-
-template < typename ScalarT >
-Vector3D< ScalarT > operator+(const Vector3D< ScalarT >& c1,
-                           const Vector3D< ScalarT >& c2) {
-    return Vector3D< ScalarT >(c1[0] + c2[0], c1[1] + c2[1], c1[2] + c2[2]);
-}
-
-template < typename ScalarT >
-Vector3D< ScalarT > operator-(const Vector3D< ScalarT >& c1,
-                           const Vector3D< ScalarT >& c2) {
-    return Vector3D< ScalarT >(c1[0] - c2[0], c1[1] - c2[1], c1[2] - c2[2]);
-}
-
-template < typename ScalarT > 
-Vector3D< ScalarT > operator*(ScalarT s, const Vector3D< ScalarT >& c) {
-    return Vector3D< ScalarT >(s * c[0], s * c[1], s * c[2]);
-}
-
-template < typename ScalarT > 
-Vector3D< ScalarT > operator*(const Vector3D< ScalarT >& c, ScalarT s) {
-    return Vector3D< ScalarT >(s * c[0], s * c[1], s * c[2]);
-}
-
-template < typename ScalarT >
-std::ostream& operator<<(std::ostream& os, const Vector3D< ScalarT >& c) {
-    os << c[0] << ' ' << c[1] << ' ' << c[2];
-    return os;
-}
-
-template < ScalarT >
-ScalarT Dot(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
-   return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-} 
-
-template < ScalarT >
-ScalarT Dist(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
-    return std::sqrt(Dot(v1, v2));
-}
+#include "Vector3D.h"
 
 //------------------------------------------------------------------------------
 template < typename FwdIt >
@@ -82,12 +27,13 @@ ComputeDistances(FwdIt begin, FwdIt end) {
     return res;
 }
 
+template < typename ScalarT >
 std::size_t FindPos(const std::vector< ScalarT > dist, ScalarT t) {
     assert(t >= ScalarT(0) && t <= ScalarT(1));
     const ScalarT totalSize = dist.back();
     const ScalarT d = t * totalSize;
     using V = std::vector< ScalarT >;
-    V::iterator e = std::lower_bound(dist.begin(), dist.end(), d);
+    typename V::iterator e = std::lower_bound(dist.begin(), dist.end(), d);
     assert(e != dist.end());
     return std::size_t(std::distance(dist.begin(), e));
 }
@@ -128,10 +74,10 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
 }
 
 //------------------------------------------------------------------------------
-template < ScalarT >
-Vector3D< ScalarT > CRomInterpolate(const std::vector< ScalarT >& points 
-                                    const std::vector< ScalarT >& dist,
-                                    ScalarT t) {
+template < typename ScalarT > Vector3D< ScalarT >
+CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
+                  const std::vector< ScalarT >& dist,
+                  ScalarT t) {
     assert(points.size());
     assert(dist.size());
     assert(t >= ScalarT(0) && t <= ScalarT(1));
@@ -142,4 +88,50 @@ Vector3D< ScalarT > CRomInterpolate(const std::vector< ScalarT >& points
     return CatmullRom(t, std::get<0>(p), 
                       std::get<1>(p), std::get<2>(p), std::get<3>(p), 
                       std::get<4>(p));
+}
+//------------------------------------------------------------------------------
+template < typename ScalarT > Vector3D< ScalarT >
+KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
+                           const std::vector< ScalarT >& keys,
+                           ScalarT t) {
+    assert(points.size());
+    assert(keys.size());
+    assert(points.size() == keys.size());
+    using V = Vector3D< ScalarT >;
+    typename V::const_iterator i = 
+                                  std::lower_bound(keys.begin(), keys.end(), t);
+    assert(i != keys.end());
+    typename V::const_iterator j = i;
+    ++j;
+    const ScalarT u = (t - *i) / (*j - *i);
+    const std::size_t pidx1 = std::distance(keys.begin(), i);
+    const std::size_t pidx0 = pidx1 - 1;
+    const std::size_t pidx2 = pidx1 + 1;
+    const std::size_t pidx3 = pidx2 + 1;
+    const V& p0 = points[pidx0];
+    const V& p1 = points[pidx1];
+    const V& p2 = points[pidx2];
+    const V& p3 = points[pidx3];
+    return CatmullRom(u, p0, p1, p2, p3);
+}
+//------------------------------------------------------------------------------
+template < typename ScalarT >
+std::vector< char >
+ScalarToRGB(const std::vector< ScalarT >& data,
+            const std::vector< Vector3D< ScalarT > >& colors,
+            const std::vector< ScalarT >& dist,
+            ScalarT minVal,
+            ScalarT maxVal,
+            ScalarT normFactor = ScalarT(1)) {
+            std::vector< char > out;
+            out.reserve(data.size() * 3);
+            for(auto d: data) {
+                const ScalarT v = (d - minVal) / (maxVal - minVal);
+                const Vector3D< ScalarT > c =
+                    normFactor * CRomInterpolation(colors, dist, v);
+                out.push_back(char(v[0]);
+                out.push_back(char(v[1]);
+                out.push_back(char(v[2]);
+            }
+            return d;
 }
