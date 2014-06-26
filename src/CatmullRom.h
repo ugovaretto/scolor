@@ -79,7 +79,7 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P1,
                                const Vector3D< ScalarT >& P2,
                                const Vector3D< ScalarT >& P3) {
-    assert(u >= ScalarT(0) && u <= Scalart(1));
+    assert(u >= ScalarT(0) && u <= ScalarT(1));
     const Vector3D< ScalarT > c0(P1);
     const Vector3D< ScalarT > c1 = -0.5 * P0 + 0.5 * P2;
     const Vector3D< ScalarT > c2 = P0 - 2.5 * P1 + 2.0 * P2 - 0.5 * P3;
@@ -88,7 +88,7 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
 }
 
 //------------------------------------------------------------------------------
-///Piecewise Catmull Rom spline
+///Piecewise Catmull-Rom spline
 template < typename ScalarT > Vector3D< ScalarT >
 CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                   const std::vector< ScalarT >& dist,
@@ -145,15 +145,15 @@ ScalarToRGB(const std::vector< ScalarT >& data,
             ScalarT minVal,
             ScalarT maxVal,
             ScalarT normFactor = ScalarT(1)) {
-            std::vector< char > out;
-            out.reserve(data.size() * 3);
-            for(auto d: data) {
-                const ScalarT v = (d - minVal) / (maxVal - minVal);
-                const Vector3D< ScalarT > c =
-                    normFactor * CRomInterpolation(colors, dist, v);
-                out.push_back(char(v[0]);
-                out.push_back(char(v[1]);
-                out.push_back(char(v[2]);
-            }
-            return d;
+    std::vector< char > out;
+    out.reserve(data.size() * 3);
+    for(auto d: data) {
+        const ScalarT v = (d - minVal) / (maxVal - minVal);
+        const Vector3D< ScalarT > c =
+            normFactor * CRomInterpolation(colors, dist, v);
+        out.push_back(char(v[0]));
+        out.push_back(char(v[1]));
+        out.push_back(char(v[2]));
+    }
+    return out;
 }
