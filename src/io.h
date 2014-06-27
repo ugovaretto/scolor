@@ -106,9 +106,9 @@ ScalarToGray(const std::vector< ScalarT >& data,
      out.reserve(data.size() * 3);
      for(auto d: data) {
          const ScalarT v = (d - minVal) / (maxVal - minVal);
-        out.push_back(v);
-        out.push_back(v);
-        out.push_back(v);
+        out.push_back(normFactor * v);
+        out.push_back(normFactor * v);
+        out.push_back(normFactor * v);
      }
      return out;
 }
