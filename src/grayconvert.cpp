@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdexcept>
 #include <fstream>
+#include <algorithm>
 
 #include "io.h"
 #include "imageio.h"
@@ -24,8 +25,10 @@ std::vector< double > ReadFile(string path,
     in.seekg(0, ios::end);
     const size_t fileSize = in.tellg();
     in.seekg(0, ios::beg);
-    std::vector< double > buf;
+    std::vector< double > buf(fileSize / sizeof(double));
     in.read(reinterpret_cast< char* >(&buf.front()), fileSize);
+    double mm = *max(buf.begin(), buf.end());
+    cout << mm << endl;
     return buf;
 }
 
