@@ -12,9 +12,9 @@
 //------------------------------------------------------------------------------
 ///Compute at each point the sum of the distences from the first point
 template < typename FwdIt >
-std::vector< typename std::iterator_traits< FwdIt >::value_type > 
+std::vector< typename std::iterator_traits< FwdIt >::value_type::Scalar > 
 ComputeDistances(FwdIt begin, FwdIt end) {
-    using S = typename std::iterator_traits< FwdIt >::value_type;
+    using S = typename std::iterator_traits< FwdIt >::value_type::Scalar;
     std::vector< S > res;
     res.reserve(std::distance(begin, end));
     FwdIt v0 = begin;
@@ -32,11 +32,11 @@ ComputeDistances(FwdIt begin, FwdIt end) {
 ///the closest value lower or equal to the passed value 
 template < typename ScalarT >
 std::size_t FindPos(const std::vector< ScalarT >& dist, ScalarT t) {
-    assert(t >= ScalarT(0) && t <= ScalarT(1));
+    //assert(t >= ScalarT(0) && t <= ScalarT(1));
     const ScalarT totalSize = dist.back();
     const ScalarT d = t * totalSize;
     using V = std::vector< ScalarT >;
-    typename V::iterator e = std::lower_bound(dist.begin(), dist.end(), d);
+    typename V::const_iterator e = std::lower_bound(dist.begin(), dist.end(), d);
     assert(e != dist.end());
     return std::size_t(std::distance(dist.begin(), e));
 }
@@ -59,15 +59,16 @@ Extract(const std::vector< ScalarT >& dist,
         ScalarT t) {
    using V = Vector3D< ScalarT >;
    using T = std::tuple< ScalarT, const V&, const V&, 
-                         const V&, const V&, ScalarT >;
+                         const V&, const V& >;
    const std::size_t p = FindPos(dist, t);
-   const std::size_t pidx1 = p + 2; //move to second point where
+   const std::size_t pidx1 = p + 1; //move to second point where
                                     //first point is replicated
    const std::size_t pidx0 = pidx1 - 1;
    const std::size_t pidx2 = pidx1 + 1;
    const std::size_t pidx3 = pidx2 + 1;
    const ScalarT u = (t * dist.back() - dist[p]) 
                      / Dist(points[pidx1], points[pidx2]);
+   std::cout << p << std::endl;
    return T(u, points[pidx0], points[pidx1], points[pidx2], points[pidx3]);
 }
 
@@ -79,7 +80,7 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P1,
                                const Vector3D< ScalarT >& P2,
                                const Vector3D< ScalarT >& P3) {
-    assert(u >= ScalarT(0) && u <= ScalarT(1));
+    //assert(u >= ScalarT(0) && u <= ScalarT(1));
     const Vector3D< ScalarT > c0(P1);
     const Vector3D< ScalarT > c1 = -0.5 * P0 + 0.5 * P2;
     const Vector3D< ScalarT > c2 = P0 - 2.5 * P1 + 2.0 * P2 - 0.5 * P3;
@@ -95,10 +96,10 @@ CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                   ScalarT t) {
     assert(points.size());
     assert(dist.size());
-    assert(t >= ScalarT(0) && t <= ScalarT(1));
-    assert(points.size() == dist.size() + 4);
+    //assert(t >= ScalarT(0) && t <= ScalarT(1));
+    assert(points.size() == dist.size() + 2);
     using V = Vector3D< ScalarT >;
-    using T = std::tuple< const V&, const V&, const V&, const V&, ScalarT >; 
+    using T = std::tuple< ScalarT, const V&, const V&, const V&, const V& >;
     const T p(Extract(dist, points, t));
     return CatmullRom(std::get<0>(p), 
                       std::get<1>(p), std::get<2>(p), std::get<3>(p), 
@@ -135,25 +136,4 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     const V& p2 = points[pidx2];
     const V& p3 = points[pidx3];
     return CatmullRom(u, p0, p1, p2, p3);
-}
-//------------------------------------------------------------------------------
-template < typename ScalarT >
-std::vector< char >
-ScalarToRGB(const std::vector< ScalarT >& data,
-            const std::vector< Vector3D< ScalarT > >& colors,
-            const std::vector< ScalarT >& dist,
-            ScalarT minVal,
-            ScalarT maxVal,
-            ScalarT normFactor = ScalarT(1)) {
-    std::vector< char > out;
-    out.reserve(data.size() * 3);
-    for(auto d: data) {
-        const ScalarT v = (d - minVal) / (maxVal - minVal);
-        const Vector3D< ScalarT > c =
-            normFactor * CRomInterpolation(colors, dist, v);
-        out.push_back(char(v[0]));
-        out.push_back(char(v[1]));
-        out.push_back(char(v[2]));
-    }
-    return out;
 }
