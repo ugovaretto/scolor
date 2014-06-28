@@ -32,12 +32,14 @@ ComputeDistances(FwdIt begin, FwdIt end) {
 ///the closest value lower or equal to the passed value 
 template < typename ScalarT >
 std::size_t FindPos(const std::vector< ScalarT >& dist, ScalarT t) {
-    //assert(t >= ScalarT(0) && t <= ScalarT(1));
+    assert(t >= ScalarT(0) && t <= ScalarT(1));
     const ScalarT totalSize = dist.back();
     const ScalarT d = t * totalSize;
     using V = std::vector< ScalarT >;
-    typename V::const_iterator e = std::lower_bound(dist.begin(), dist.end(), d);
+    typename V::const_iterator e = s
+        td::lower_bound(dist.begin(), dist.end(), d);
     assert(e != dist.end());
+    typename V::const_iterator f = 
     return std::size_t(std::distance(dist.begin(), e));
 }
 
@@ -66,9 +68,10 @@ Extract(const std::vector< ScalarT >& dist,
    const std::size_t pidx0 = pidx1 - 1;
    const std::size_t pidx2 = pidx1 + 1;
    const std::size_t pidx3 = pidx2 + 1;
-   const ScalarT u = (t * dist.back() - dist[p]) 
+   ScalarT u = (t * dist.back() - dist[p]) 
                      / Dist(points[pidx1], points[pidx2]);
-   std::cout << p << std::endl;
+   if(u != u) u = ScalarT(0);
+   assert(u >= ScalarT(0));
    return T(u, points[pidx0], points[pidx1], points[pidx2], points[pidx3]);
 }
 
@@ -80,7 +83,7 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P1,
                                const Vector3D< ScalarT >& P2,
                                const Vector3D< ScalarT >& P3) {
-    //assert(u >= ScalarT(0) && u <= ScalarT(1));
+    assert(u >= ScalarT(0) && u <= ScalarT(1));
     const Vector3D< ScalarT > c0(P1);
     const Vector3D< ScalarT > c1 = -0.5 * P0 + 0.5 * P2;
     const Vector3D< ScalarT > c2 = P0 - 2.5 * P1 + 2.0 * P2 - 0.5 * P3;
@@ -94,9 +97,10 @@ template < typename ScalarT > Vector3D< ScalarT >
 CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                   const std::vector< ScalarT >& dist,
                   ScalarT t) {
+    if(std::abs(t) < 10E-8) t = ScalarT(0);
     assert(points.size());
     assert(dist.size());
-    //assert(t >= ScalarT(0) && t <= ScalarT(1));
+    assert(t >= ScalarT(0) && t <= ScalarT(1));
     assert(points.size() == dist.size() + 2);
     using V = Vector3D< ScalarT >;
     using T = std::tuple< ScalarT, const V&, const V&, const V&, const V& >;

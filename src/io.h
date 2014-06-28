@@ -5,6 +5,7 @@
 #include <sstream>
 #include <tuple>
 #include <stdexcept>
+#include <cassert>
 #include "Vector3D.h"
 
 template < typename ScalarT >
@@ -86,12 +87,31 @@ ScalarToRGB(const std::vector< ScalarT >& data,
     std::vector< ColorType > out;
     out.reserve(data.size() * 3);
     for(auto d: data) {
+        assert(d >= minVal);
         const ScalarT u = (d - minVal) / (maxVal - minVal);
         const Vector3D< ScalarT > v = normFactor 
                                    * CRomInterpolation(colors, dist, u);
-        out.push_back(char(v[0]));
-        out.push_back(char(v[1]));
-        out.push_back(char(v[2]));
+        out.push_back(ColorType(v[0]));
+        out.push_back(ColorType(v[1]));
+        out.push_back(ColorType(v[2]));
+    }
+    return out;
+}
+
+template < typename ScalarT >
+std::vector< ColorType >
+LScalarToRGB(const std::vector< ScalarT >& data,
+             const std::vector< Vector3D< ScalarT > >& colors,
+             const std::vector< ScalarT >& keys,
+             ScalarT normFactor = ScalarT(1)) {
+    std::vector< ColorType > out;
+    out.reserve(data.size() * 3);
+    for(auto d: data) {
+        const Vector3D< ScalarT > v = normFactor 
+                                   * LinearInterpolation(colors, keys, d);
+        out.push_back(ColorType(v[0]));
+        out.push_back(ColorType(v[1]));
+        out.push_back(ColorType(v[2]));
     }
     return out;
 }

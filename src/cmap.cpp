@@ -9,6 +9,7 @@
 #include "io.h"
 #include "imageio.h"
 #include "CatmullRom.h"
+#include "LinearInterpolation.h"
 
 using namespace std;
 
@@ -64,15 +65,21 @@ int main(int argc, char** argv) {
     const int endFrame   = stoi(argv[4]); //throws if arg not valid
     const int width = stoi(argv[6]);
     const int height = stoi(argv[7]);
+    //std::vector< Vector3D< double > > colors =
+    //{ {1,0,0}, {1,0,0}, {0,1,0},{0,0,1}, {0,1,1}, {0,1,1}};
+    //std::vector< double > dist = ComputeDistances(++colors.begin(),
+    //                                              --colors.end());
+    
     std::vector< Vector3D< double > > colors =
-    { {1,0,0}, {1,0,0}, {0,1,0},{0,0,1}, {0,1,1}, {0,1,1}};
-    std::vector< double > dist = ComputeDistances(++colors.begin(),
-                                                  --colors.end());
+    {{1,1,1}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {0, 1, 1}, {1, 0, 1}};
+    std::vector< double > keys =
+    {0, 1./5, 2./5, 3./5, 4./5, 5./5};
     JPEGWriter w;
     for(int f = startFrame; f != endFrame + 1; ++f) {
         std::vector< double > data = ReadFile(path, prefix, f, suffix);
         const std::vector< ColorType > pic = 
-                            ScalarToRGB(data, colors, dist, 0.0, 1.0, 255.0);
+                            //ScalarToRGB(data, colors, dist, 0.0, 1.0, 255.0);
+                            LScalarToRGB(data, colors, keys, 255.0);
         const string outName = "cout" + FrameNumToString(f, endFrame) + ".jpg";
         w.Save(width, height, outName.c_str(), pic);
     }
