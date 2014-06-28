@@ -36,10 +36,9 @@ std::size_t FindPos(const std::vector< ScalarT >& dist, ScalarT t) {
     const ScalarT totalSize = dist.back();
     const ScalarT d = t * totalSize;
     using V = std::vector< ScalarT >;
-    typename V::const_iterator e = s
-        td::lower_bound(dist.begin(), dist.end(), d);
+    typename V::const_iterator e = 
+        std::lower_bound(dist.begin(), dist.end(), d);
     assert(e != dist.end());
-    typename V::const_iterator f = 
     return std::size_t(std::distance(dist.begin(), e));
 }
 

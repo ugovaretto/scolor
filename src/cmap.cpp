@@ -69,11 +69,12 @@ int main(int argc, char** argv) {
     //{ {1,0,0}, {1,0,0}, {0,1,0},{0,0,1}, {0,1,1}, {0,1,1}};
     //std::vector< double > dist = ComputeDistances(++colors.begin(),
     //                                              --colors.end());
-    
+        
     std::vector< Vector3D< double > > colors =
-    {{1,1,1}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {0, 1, 1}, {1, 0, 1}};
+    //{{1,1,1}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {0, 1, 1}, {1, 0, 1}};
+    {0xFFFFFF, 0xA3F9FF, 0x0FEFFF, 0x0EE1F0, 0x1FD2FF, 0x00C0F0};
     std::vector< double > keys =
-    {0, 1./5, 2./5, 3./5, 4./5, 5./5};
+    {0, 1./5, 2./5, 2.2/5, 4.5 /5, 5./5};
     JPEGWriter w;
     for(int f = startFrame; f != endFrame + 1; ++f) {
         std::vector< double > data = ReadFile(path, prefix, f, suffix);

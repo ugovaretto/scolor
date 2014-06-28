@@ -15,6 +15,11 @@ struct Vector3D {
         data_[1] = g;
         data_[2] = b;
     }
+    Vector3D(int c) { 
+        data_[0] = ScalarT(c & 0xFF) / ScalarT(255.0);
+        data_[1] = ScalarT((c >> 8) & 0xFF) / ScalarT(255.0);
+        data_[2] = ScalarT((c >> 16) & 0xFF) / ScalarT(255.0);
+    }
     Vector3D(const Vector3D&) = default;
     Vector3D(Vector3D&&) = default;
     ScalarT operator[](std::size_t i) const { return data_[i]; }

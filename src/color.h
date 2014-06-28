@@ -2,6 +2,8 @@
 #include <cmath>
 #include "Vector3D.h"
 
+
+#if 0
 Vector3D< ScalarT > 
 HSVtoRGB(const Vector3D< ScalarT >& v) {
     enum {H = 0, S = 1, V = 2};
@@ -54,3 +56,5 @@ HSVtoRGB(const Vector3D< ScalarT >& v) {
     }
     return Vector3D< ScalarT >(r, g, b);
 }
+#endif
+

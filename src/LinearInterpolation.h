@@ -22,6 +22,6 @@ LinearInterpolation(const std::vector< Vector3D< ScalarT > >& data,
     if(maxidx == minidx) return data[minidx];
     const ScalarT u = (t - *minv) / (*maxv - *minv);
     assert(u >= ScalarT(0) && u <= ScalarT(1));
-    return data[minidx];// * (ScalarT(1) - u) + u * data[maxidx];
+    return data[minidx] * (ScalarT(1) - u) + u * data[maxidx];
 }
     

@@ -17,7 +17,7 @@ public:
         tjCompress2(tj_, const_cast< unsigned char* >(&data[0]),
                     width, tjPixelSize[TJPF_RGB] * width, height,
                     TJPF_BGR, &out,
-                    &size, TJSAMP_444, 80, TJXOP_VFLIP);
+                    &size, TJSAMP_444, 100, TJXOP_VFLIP);
         std::ofstream os(fname, std::ios::out | std::ios::binary);
         if(!os) throw std::runtime_error("Cannot write to file");
         os.write(reinterpret_cast< char* >(out), size);
