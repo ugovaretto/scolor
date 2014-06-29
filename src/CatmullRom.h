@@ -140,3 +140,29 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     const V& p3 = points[pidx3];
     return CatmullRom(u, p0, p1, p2, p3);
 }
+
+///Simple keyframed Catmull-Rom interpolation
+template < typename ScalarT >
+Vector3D< ScalarT >
+CRKInterpolation(const std::vector< Vector3D< ScalarT > >& data,
+                const std::vector< ScalarT >& keys,
+                ScalarT t ) {
+    if(std::abs(t) < 10E-8) t = ScalarT(0);
+    assert(data.size() == keys.size());
+    if(t >= keys.back()) return data.back();
+    if(t <= keys.front()) return data.front(); 
+    using I = typename std::vector< ScalarT >::const_iterator;
+    I minv = std::lower_bound(keys.begin(), keys.end(), t);
+    I maxv = std::upper_bound(keys.begin(), keys.end(), t);
+    const std::size_t minidx = std::distance(keys.begin(), minv);
+    const std::size_t maxidx = std::distance(keys.begin(), maxv);
+    if(maxidx == minidx) return data[minidx];
+    const ScalarT u = (t - *minv) / (*maxv - *minv);
+    assert(u >= ScalarT(0) && u <= ScalarT(1));
+    const std::size_t p1 = minidx;
+    const std::size_t p0 = p1 == 0 ? 0 : p1 - 1;
+    const std::size_t p2 = p1 + 1;
+    const std::size_t p3 = p2 == (data.size() - 1) ? p2 : p2 + 1;
+    return CatmullRom(u, data[p0], data[p1], data[p2], data[p3]);
+}
+    

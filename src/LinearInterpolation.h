@@ -24,4 +24,21 @@ LinearInterpolation(const std::vector< Vector3D< ScalarT > >& data,
     assert(u >= ScalarT(0) && u <= ScalarT(1));
     return data[minidx] * (ScalarT(1) - u) + u * data[maxidx];
 }
-    
+
+template < typename ScalarT >
+Vector3D< ScalarT >
+SLinearInterpolation(const std::vector< Vector3D< ScalarT > >& data,
+                     ScalarT minVal,
+                     ScalarT maxVal,
+                     ScalarT t ) {
+    if(t < minVal) t = minVal;
+    if(t > maxVal) t = maxVal;
+    const ScalarT u = (t - minVal) / (maxVal - minVal);
+    if(t == ScalarT(1.0)) return data.back();
+    const std::size_t p0 = 
+        std::size_t(std::floor(u * (data.size() - 1)));
+    const std::size_t p1 = 
+        std::size_t(std::ceil(u * (data.size() - 1)));
+    const ScalarT s = u - std::floor(u * data.size() - 1);
+    return data[p0] * (ScalarT(1) - s) + s * data[p1];
+}

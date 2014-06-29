@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     //                                              --colors.end());
         
     std::vector< Vector3D< double > > colors =
-    //{{1,1,1}, {0, 1, 0}, {0, 0, 1}, {1, 1, 0}, {0, 1, 1}, {1, 0, 1}};
+    //{{1,1,1}, {1, 1, 0}, {0, 1, 1}, {1, 0.5, 0.50}, {0, 0.5, 1}, {0.2, 0.4, 1}};
     {0xFFFFFF, 0xA3F9FF, 0x0FEFFF, 0x0EE1F0, 0x1FD2FF, 0x00C0F0};
     std::vector< double > keys =
     {0, 1./5, 2./5, 2.2/5, 4.5 /5, 5./5};
@@ -80,7 +80,8 @@ int main(int argc, char** argv) {
         std::vector< double > data = ReadFile(path, prefix, f, suffix);
         const std::vector< ColorType > pic = 
                             //ScalarToRGB(data, colors, dist, 0.0, 1.0, 255.0);
-                            LScalarToRGB(data, colors, keys, 255.0);
+                            //LScalarToRGB(data, colors, keys, 255.0);
+                            SLScalarToRGB(data, colors, 0.0, 1.0, 255.0);
         const string outName = "cout" + FrameNumToString(f, endFrame) + ".jpg";
         w.Save(width, height, outName.c_str(), pic);
     }
