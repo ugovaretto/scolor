@@ -33,8 +33,8 @@ ComputeDistances(FwdIt begin, FwdIt end) {
 template < typename ScalarT >
 std::size_t FindPos(const std::vector< ScalarT >& dist, ScalarT t) {
     assert(t >= ScalarT(0) && t <= ScalarT(1));
-    const ScalarT totalSize = dist.back();
-    const ScalarT d = t * totalSize;
+    const ScalarT totalLength = dist.back();
+    const ScalarT d = t * totalLength;
     using V = std::vector< ScalarT >;
     typename V::const_iterator e = 
         std::lower_bound(dist.begin(), dist.end(), d);
@@ -44,11 +44,7 @@ std::size_t FindPos(const std::vector< ScalarT >& dist, ScalarT t) {
 
 ///Extract normalized ([0,1]) parameter and control points from global control
 ///point array.
-///The point array *shall* have a size = dist.size + 4 because:
-/// # two points are added to the original array to allow for proper
-//interpolation
-/// # the first and last two points are replicated and the first point
-///   meaningful for interpolation is the secon one in a CR spline
+///Duplicate first and last point.
 template < typename ScalarT >
 std::tuple< ScalarT,
             const Vector3D< ScalarT >&,
@@ -56,18 +52,16 @@ std::tuple< ScalarT,
             const Vector3D< ScalarT >&,
             const Vector3D< ScalarT >& >
 Extract(const std::vector< ScalarT >& dist,
-        const std::vector< Vector3D< ScalarT > >& points,//size = dist.size + 4,
+        const std::vector< Vector3D< ScalarT > >& points,
         ScalarT t) {
    using V = Vector3D< ScalarT >;
    using T = std::tuple< ScalarT, const V&, const V&, 
                          const V&, const V& >;
-   const std::size_t p = FindPos(dist, t);
-   const std::size_t pidx1 = p + 1; //move to second point where
-                                    //first point is replicated
-   const std::size_t pidx0 = pidx1 - 1;
+   const std::size_t pidx1 = FindPos(dist, t);
+   const std::size_t pidx0 = std::max(0, pidx1 - 1);
    const std::size_t pidx2 = pidx1 + 1;
-   const std::size_t pidx3 = pidx2 + 1;
-   ScalarT u = (t * dist.back() - dist[p]) 
+   const std::size_t pidx3 = std::min(points.size() - 1, pidx2 + 1);
+   ScalarT u = (t * dist.back() - dist[pidx1]) 
                      / Dist(points[pidx1], points[pidx2]);
    if(u != u) u = ScalarT(0);
    assert(u >= ScalarT(0));
@@ -100,7 +94,7 @@ CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     assert(points.size());
     assert(dist.size());
     assert(t >= ScalarT(0) && t <= ScalarT(1));
-    assert(points.size() == dist.size() + 2);
+    assert(points.size() == dist.size());
     using V = Vector3D< ScalarT >;
     using T = std::tuple< ScalarT, const V&, const V&, const V&, const V& >;
     const T p(Extract(dist, points, t));
