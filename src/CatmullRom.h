@@ -7,8 +7,8 @@
 #include <cmath>
 #include <cassert>
 
-#include "Vector3D.h"
 
+#include "Vector3D.h"
 //------------------------------------------------------------------------------
 ///Compute at each point the sum of the distences from the first point
 template < typename FwdIt >
@@ -25,8 +25,13 @@ ComputeDistances(FwdIt begin, FwdIt end) {
         v0 = v1;
         ++v1;
     }
+    const S total = res.back();
+    std::transform(res.begin(), res.end(), 
+                   res.begin(), [total](S v) { return v / total; });
     return res;
 }
+
+
 
 ///Find in the sorted array of distances the position of the element holding
 ///the closest value lower or equal to the passed value 
@@ -58,7 +63,7 @@ Extract(const std::vector< ScalarT >& dist,
    using T = std::tuple< ScalarT, const V&, const V&, 
                          const V&, const V& >;
    const std::size_t pidx1 = FindPos(dist, t);
-   const std::size_t pidx0 = std::max(0, pidx1 - 1);
+   const std::size_t pidx0 = std::max(std::size_t(0), pidx1 - 1);
    const std::size_t pidx2 = pidx1 + 1;
    const std::size_t pidx3 = std::min(points.size() - 1, pidx2 + 1);
    ScalarT u = (t * dist.back() - dist[pidx1]) 
@@ -76,7 +81,8 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P1,
                                const Vector3D< ScalarT >& P2,
                                const Vector3D< ScalarT >& P3) {
-    assert(u >= ScalarT(0) && u <= ScalarT(1));
+    //assert(u >= ScalarT(0) && u <= ScalarT(1));
+    if(u < ScalarT(0)) std::cout << u << std::endl;
     const Vector3D< ScalarT > c0(P1);
     const Vector3D< ScalarT > c1 = -0.5 * P0 + 0.5 * P2;
     const Vector3D< ScalarT > c2 = P0 - 2.5 * P1 + 2.0 * P2 - 0.5 * P3;
@@ -106,7 +112,7 @@ CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
 ///Keyframed interpolation: each parameter value in the keys array matches
 ///a point in the points array
 ///keys and arrays must be of the same size and shall contain all the points
-///in the original vector with the first and last points replicated
+///in the original vector
 template < typename ScalarT > Vector3D< ScalarT >
 KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                            const std::vector< ScalarT >& keys,
@@ -114,20 +120,18 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     assert(points.size());
     assert(keys.size());
     assert(points.size() == keys.size());
-    using V = Vector3D< ScalarT >;
-    typename V::const_iterator i = 
+    using K = std::vector< ScalarT >;
+    typename K::const_iterator i = 
                                   std::lower_bound(keys.begin(), keys.end(), t);
-    assert(i != keys.end());
-    typename V::const_iterator j = i;
+    if(t < *i) --i;
+    typename K::const_iterator j = i;
     ++j;
-    const ScalarT u = (t - *i) / (*j - *i);
-    //first point is replicated: if lower bound matches keys[0] we need to add
-    //1
-    const std::size_t d = std::size_t(std::distance(keys.begin(), i));
-    const std::size_t pidx1 = d == 0 ? d + 1 : d;
-    const std::size_t pidx0 = pidx1 - 1;
+    const ScalarT u = j >= keys.end() ? ScalarT(1) : (t - *i) / (*j - *i);
+    using V = Vector3D< double >;
+    const std::size_t pidx1 = std::size_t(std::distance(keys.begin(), i));
+    const std::size_t pidx0 = std::max(pidx1 - 1, std::size_t(0));
     const std::size_t pidx2 = pidx1 + 1;
-    const std::size_t pidx3 = pidx2 + 1;
+    const std::size_t pidx3 = std::min(points.size() - 1, pidx2 + 1);
     const V& p0 = points[pidx0];
     const V& p1 = points[pidx1];
     const V& p2 = points[pidx2];

@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     const Color c1(0,0,0);
     const Color c2(0,1,0);
     const Color c3(0,0,1);
-    const Color c4(1,0,0);
+    const Color c4(-1,0,0);
     const Color C = CatmullRom(std::stod(argv[1]), c1, c2, c3, c4);
     std::cout << C << std::endl;
     return 0;

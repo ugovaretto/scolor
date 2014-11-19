@@ -1,3 +1,7 @@
+// clang++ -std=c++11 -stdlib=libc++ \
+// ../src/grayconvert.cpp -I /opt/libjpeg-turbo/include \
+// -L /opt/libjpeg-turbo/lib -lturbojpeg -o grayconvert
+
 #include <string>
 #include <iostream>
 #include <vector>
@@ -30,7 +34,7 @@ std::vector< double > ReadFile(string path,
     in.read(reinterpret_cast< char* >(&buf.front()), fileSize);
     const double MAX = *max_element(buf.begin(), buf.end());
     const double MIN = *min_element(buf.begin(), buf.end());
-    cout << "max: " << MAX << " min: " << MIN  << endl;
+    cout << "min: " << MIN << " max: " << MAX << endl;
     return buf;
 }
 
