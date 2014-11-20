@@ -134,12 +134,15 @@ std::vector< ColorType >
 CRKScalarToRGB(const std::vector< ScalarT >& data,
                const std::vector< Vector3D< ScalarT > >& colors,
                const std::vector< ScalarT >& keys,
-               ScalarT scalingFactor = ScalarT(1)) {
+               ScalarT scalingFactor = ScalarT(1),
+               ScalarT minVal = ScalarT(0),
+               ScalarT maxVal = ScalarT(1)) {
     std::vector< ColorType > out;
     out.reserve(data.size() * 3);
     for(auto d: data) {
-        const Vector3D< ScalarT > v = scalingFactor 
-                                * KeyFramedCRomInterpolation(colors, keys, d);
+        const Vector3D< ScalarT > v = 
+            scalingFactor * KeyFramedCRomInterpolation(colors, keys, d, 
+                                                       minVal, maxVal);
         out.push_back(ColorType(v[0]));
         out.push_back(ColorType(v[1]));
         out.push_back(ColorType(v[2]));

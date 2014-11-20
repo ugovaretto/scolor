@@ -1,5 +1,6 @@
 
 //clang++ -std=c++11 -stdlib=libc++ ../src/cmap.cpp -I /opt/libjpeg-turbo/include -L /opt/libjpeg-turbo/lib -lturbojpeg -o cmap
+//./cmap ./ 400x100- 0 0 .out 400 100 -f ../maps/CoolWarmFloat33.csv -csv -stat
 
 #include <string>
 #include <iostream>
@@ -8,6 +9,8 @@
 #include <fstream>
 #include <algorithm>
 #include <sstream>
+#include <tuple>
+#include <map>
 
 #include "io.h"
 #include "imageio.h"
@@ -18,10 +21,12 @@
 using namespace std;
 
 //------------------------------------------------------------------------------
-std::vector< double > ReadFile(string path,
-                               string prefix,
-                               int n,
-                               const string& suffix) {
+using Data = tuple< std::vector< double >, double, double >;
+enum {DATASET = 0, DATASET_MIN = 1 , DATASET_MAX = 2};
+Data ReadFile(string path,
+              string prefix,
+              int n,
+              const string& suffix) {
     if(path.size() < 1) throw logic_error("Invalid  path size");
     if(path[path.size()-1] != '/') path += '/';
     prefix = path + prefix;
@@ -34,9 +39,9 @@ std::vector< double > ReadFile(string path,
     in.seekg(0, ios::beg);
     std::vector< double > buf(fileSize / sizeof(double));
     in.read(reinterpret_cast< char* >(&buf.front()), fileSize);
-    const double MAX = *max_element(buf.begin(), buf.end());
-    const double MIN = *min_element(buf.begin(), buf.end());
-    return buf;
+    const double m = *min_element(buf.begin(), buf.end());
+    const double M = *max_element(buf.begin(), buf.end());
+    return make_tuple(buf, m, M);
 }
 
 std::vector< Vector3D< double > > ReadColors(std::istream& is) {
@@ -105,7 +110,8 @@ int main(int argc, char** argv) {
                   << "  <path> <prefix>"
                      "  <start frame #> <end frame #>"
                      " <suffix> <width> <height> [-dist] "
-                     "[-f filename [-csv] [-norm]]\n";
+                     "[-f filename [-csv] [-norm]] [-stat]\n";
+
         return 1;
     }
     const string path = argv[1];
@@ -121,6 +127,7 @@ int main(int argc, char** argv) {
                                           != args.end();
     const bool csv = find(args.begin(), args.end(), "-csv") != args.end();
     const double norm = find(args.begin(), args.end(), "-norm") != args.end() ? 1./255. : 1.;
+    const bool stat = find(args.begin(), args.end(), "-stat") != args.end();
     vector< double > keyframes;
     if(find(args.begin(), args.end(), "-f") != args.end()
        && ++find(args.begin(), args.end(), "-f") != args.end()) {
@@ -154,9 +161,32 @@ int main(int argc, char** argv) {
     }
     JPEGWriter w;
     for(int f = startFrame; f != endFrame + 1; ++f) {
-        std::vector< double > data = ReadFile(path, prefix, f, suffix);
+        Data data = ReadFile(path, prefix, f, suffix);
+        if(stat) {
+            map<double, int> freq;
+            const std::vector< double >& d = get<DATASET>(data);
+            for_each(d.cbegin(), d.cend(), [&freq](double v) {freq[v]++;});
+            using MV = map<double, int>::value_type;
+            map<double, int>::iterator mi = max_element(freq.begin(),
+                                                        freq.end(),
+                                                        [](const MV& v1, const MV& v2){
+                                                            return v1.second < v2.second;
+                                                        });
+            cout << path + prefix + to_string(f) + suffix
+                 << ": min = " << get<DATASET_MIN>(data)
+                 << "  max = " << get<DATASET_MAX>(data)
+                 << "  # levels = " << freq.size()
+                 << "  max levels = " << mi->first << "->" 
+                 << mi->second  
+                 << endl;
+        }
         const std::vector< ColorType > pic = 
-                            CRKScalarToRGB(data, colors, keys, double(255));
+                            CRKScalarToRGB(get<DATASET>(data), 
+                                           colors, 
+                                           keys, 
+                                           double(255),
+                                           get<DATASET_MIN>(data),
+                                           get<DATASET_MAX>(data));
                             //ScalarToRGB(data, colors, dist, 0.0, 1.0, 255.0);
                             //LScalarToRGB(data, colors, keys, 255.0);
                             //SLScalarToRGB(data, colors, 0.0, 1.0, 255.0);

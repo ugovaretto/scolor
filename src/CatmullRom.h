@@ -81,9 +81,11 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
                                const Vector3D< ScalarT >& P0,
                                const Vector3D< ScalarT >& P1,
                                const Vector3D< ScalarT >& P2,
-                               const Vector3D< ScalarT >& P3) {
-    //assert(u >= ScalarT(0) && u <= ScalarT(1));
-    if(u < ScalarT(0)) std::cout << u << std::endl;
+                               const Vector3D< ScalarT >& P3,
+                               ScalarT minVal = ScalarT(0),
+                               ScalarT maxVal = ScalarT(1)) {
+    assert(maxVal >= minVal);
+    u = maxVal > minVal ? (u - minVal) / (maxVal - minVal) : maxVal;
     const Vector3D< ScalarT > c0(P1);
     const Vector3D< ScalarT > c1 = -0.5 * P0 + 0.5 * P2;
     const Vector3D< ScalarT > c2 = P0 - 2.5 * P1 + 2.0 * P2 - 0.5 * P3;
@@ -96,18 +98,19 @@ Vector3D< ScalarT > CatmullRom(ScalarT u,
 template < typename ScalarT > Vector3D< ScalarT >
 CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                   const std::vector< ScalarT >& dist,
-                  ScalarT t) {
+                  ScalarT t,
+                  ScalarT minVal = ScalarT(0),
+                  ScalarT maxVal = ScalarT(1)) {
     if(std::abs(t) < 10E-8) t = ScalarT(0);
     assert(points.size());
     assert(dist.size());
-    assert(t >= ScalarT(0) && t <= ScalarT(1));
     assert(points.size() == dist.size());
     using V = Vector3D< ScalarT >;
     using T = std::tuple< ScalarT, const V&, const V&, const V&, const V& >;
     const T p(Extract(dist, points, t));
     return CatmullRom(std::get<0>(p), 
                       std::get<1>(p), std::get<2>(p), std::get<3>(p), 
-                      std::get<4>(p));
+                      std::get<4>(p), minVal, maxVal);
 }
 //------------------------------------------------------------------------------
 ///Keyframed interpolation: each parameter value in the keys array matches
@@ -117,7 +120,9 @@ CRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
 template < typename ScalarT > Vector3D< ScalarT >
 KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                            const std::vector< ScalarT >& keys,
-                           ScalarT t) {
+                           ScalarT t,
+                           ScalarT minVal = ScalarT(0),
+                           ScalarT maxVal = ScalarT(1)) {
     assert(points.size());
     assert(keys.size());
     assert(points.size() == keys.size());
@@ -139,31 +144,7 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     const V& p1 = points[pidx1];
     const V& p2 = points[pidx2];
     const V& p3 = points[pidx3];
-    return CatmullRom(u, p0, p1, p2, p3);
+    return CatmullRom(u, p0, p1, p2, p3, minVal, maxVal);
 }
 
-///Simple keyframed Catmull-Rom interpolation
-template < typename ScalarT >
-Vector3D< ScalarT >
-CRKInterpolation(const std::vector< Vector3D< ScalarT > >& data,
-                const std::vector< ScalarT >& keys,
-                ScalarT t ) {
-    if(std::abs(t) < 10E-8) t = ScalarT(0);
-    assert(data.size() == keys.size());
-    if(t >= keys.back()) return data.back();
-    if(t <= keys.front()) return data.front(); 
-    using I = typename std::vector< ScalarT >::const_iterator;
-    I minv = std::lower_bound(keys.begin(), keys.end(), t);
-    I maxv = std::upper_bound(keys.begin(), keys.end(), t);
-    const std::size_t minidx = std::distance(keys.begin(), minv);
-    const std::size_t maxidx = std::distance(keys.begin(), maxv);
-    if(maxidx == minidx) return data[minidx];
-    const ScalarT u = (t - *minv) / (*maxv - *minv);
-    assert(u >= ScalarT(0) && u <= ScalarT(1));
-    const std::size_t p1 = minidx;
-    const std::size_t p0 = p1 == 0 ? 0 : p1 - 1;
-    const std::size_t p2 = p1 + 1;
-    const std::size_t p3 = p2 == (data.size() - 1) ? p2 : p2 + 1;
-    return CatmullRom(u, data[p0], data[p1], data[p2], data[p3]);
-}
     
