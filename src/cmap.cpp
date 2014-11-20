@@ -104,7 +104,8 @@ int main(int argc, char** argv) {
                   << argv[0]
                   << "  <path> <prefix>"
                      "  <start frame #> <end frame #>"
-                     " <suffix> <width> <height> [-dist] [-f filename]\n";
+                     " <suffix> <width> <height> [-dist] "
+                     "[-f filename [-csv] [-norm]]\n";
         return 1;
     }
     const string path = argv[1];

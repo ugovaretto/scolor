@@ -73,6 +73,7 @@ Extract(const std::vector< ScalarT >& dist,
    return T(u, points[pidx0], points[pidx1], points[pidx2], points[pidx3]);
 }
 
+
 //------------------------------------------------------------------------------
 ///Standard Catmull-Rom spline
 template < typename ScalarT >
@@ -123,10 +124,12 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     using K = std::vector< ScalarT >;
     typename K::const_iterator i = 
                                   std::lower_bound(keys.begin(), keys.end(), t);
-    if(t < *i) --i;
+
+    assert(i != keys.end());      
+    if(t < *i) --i;                        
     typename K::const_iterator j = i;
     ++j;
-    const ScalarT u = j >= keys.end() ? ScalarT(1) : (t - *i) / (*j - *i);
+    const ScalarT u = j == keys.end() ? ScalarT(0) : (t - *i) / (*j - *i);
     using V = Vector3D< double >;
     const std::size_t pidx1 = std::size_t(std::distance(keys.begin(), i));
     const std::size_t pidx0 = std::max(pidx1 - 1, std::size_t(0));
