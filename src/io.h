@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "Vector3D.h"
+#include "hsvrgb.h"
 
 
 //-----------------------------------------------------------------------------
@@ -151,6 +152,30 @@ CRKScalarToRGB(const std::vector< ScalarT >& data,
 }
 
 
+//-----------------------------------------------------------------------------
+template < typename ScalarT >
+std::vector< ColorType >
+CRKScalarHSVToRGB(const std::vector< ScalarT >& data,
+               const std::vector< Vector3D< ScalarT > >& colors,
+               const std::vector< ScalarT >& keys,
+               ScalarT scalingFactor = ScalarT(1),
+               ScalarT minVal = ScalarT(0),
+               ScalarT maxVal = ScalarT(1)) {
+    std::vector< ColorType > out;
+    out.reserve(data.size() * 3);
+    for(auto d: data) {
+        const Vector3D< ScalarT > v = 
+                           KeyFramedCRomInterpolation(colors, keys, d, 
+                                                      minVal, maxVal);
+        hsv h(v[0], v[1], v[2]);
+        rgb c = hsv2rgb(h);                             
+        out.push_back(ColorType(scalingFactor * c.r));
+        out.push_back(ColorType(scalingFactor * c.g));
+        out.push_back(ColorType(scalingFactor * c.b));
+    }
+    return out;
+}
+
 
 //-----------------------------------------------------------------------------
 template < typename ScalarT >
@@ -158,12 +183,15 @@ std::vector< ColorType >
 LScalarToRGB(const std::vector< ScalarT >& data,
              const std::vector< Vector3D< ScalarT > >& colors,
              const std::vector< ScalarT >& keys,
-             ScalarT normFactor = ScalarT(1)) {
+             ScalarT normFactor = ScalarT(1),
+             ScalarT minVal = ScalarT(0),
+             ScalarT maxVal = ScalarT(1)) {
     std::vector< ColorType > out;
     out.reserve(data.size() * 3);
     for(auto d: data) {
         const Vector3D< ScalarT > v = normFactor 
-                                   * LinearInterpolation(colors, keys, d);
+                                   * LinearInterpolation(colors, keys, d, 
+                                                         minVal, maxVal);
         out.push_back(ColorType(v[0]));
         out.push_back(ColorType(v[1]));
         out.push_back(ColorType(v[2]));
@@ -171,6 +199,30 @@ LScalarToRGB(const std::vector< ScalarT >& data,
     return out;
 }
 
+//-----------------------------------------------------------------------------
+template < typename ScalarT >
+std::vector< ColorType >
+LScalarHSVToRGB(const std::vector< ScalarT >& data,
+                const std::vector< Vector3D< ScalarT > >& colors,
+                const std::vector< ScalarT >& keys,
+                ScalarT normFactor = ScalarT(1),
+                ScalarT minVal = ScalarT(0),
+                ScalarT maxVal = ScalarT(1)) {
+    std::vector< ColorType > out;
+    out.reserve(data.size() * 3);
+    for(auto d: data) {
+        const Vector3D< ScalarT > v =  
+                                     LinearInterpolation(colors, keys, d, 
+                                                         minVal, maxVal);
+        
+        hsv h(v[0], v[1], v[2]);
+        rgb c = hsv2rgb(h);                         
+        out.push_back(ColorType(normFactor * c.r));
+        out.push_back(ColorType(normFactor * c.g));
+        out.push_back(ColorType(normFactor * c.b));
+    }
+    return out;
+}
 //-----------------------------------------------------------------------------
 template < typename ScalarT >
 std::vector< ColorType >

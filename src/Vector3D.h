@@ -65,6 +65,11 @@ ScalarT Dot(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
 } 
 
 template < typename ScalarT >
+ScalarT SqDist(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
+    return (Dot(v1, v2));
+}
+
+template < typename ScalarT >
 ScalarT Dist(const Vector3D< ScalarT >& v1, const Vector3D< ScalarT >& v2) {
-    return std::sqrt(Dot(v1, v2));
+    return std::sqrt(SqDist(v1, v2));
 }

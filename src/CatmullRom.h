@@ -10,7 +10,7 @@
 
 #include "Vector3D.h"
 //------------------------------------------------------------------------------
-///Compute at each point the sum of the distences from the first point
+///Compute at each point the sum of the *SQUARED* distences from the first point
 template < typename FwdIt >
 std::vector< typename std::iterator_traits< FwdIt >::value_type::Scalar > 
 ComputeDistances(FwdIt begin, FwdIt end) {
@@ -21,7 +21,7 @@ ComputeDistances(FwdIt begin, FwdIt end) {
     FwdIt v1 = ++begin;
     res.push_back(S(0));
     while(v1 != end) {
-        res.push_back(Dist(*v1, *v0) + res.back());
+        res.push_back(SqDist(*v1, *v0) + res.back());
         v0 = v1;
         ++v1;
     }
@@ -140,10 +140,18 @@ KeyFramedCRomInterpolation(const std::vector< Vector3D< ScalarT > >& points,
     const std::size_t pidx0 = std::max(pidx1 - 1, std::size_t(0));
     const std::size_t pidx2 = pidx1 + 1;
     const std::size_t pidx3 = std::min(points.size() - 1, pidx2 + 1);
-    const V& p0 = points[pidx0];
+    //const V& p0 = points[pidx0];
     const V& p1 = points[pidx1];
     const V& p2 = points[pidx2];
-    const V& p3 = points[pidx3];
+    //const V& p3 = points[pidx3];
+    V p0;
+    V p3;
+    if(pidx1 - 1 < 0) {
+        p0 = ScalarT(2) * p1 - p2;
+    } else p0 = points[pidx0];
+    if(pidx2 + 1 >= points.size()) {
+        p3 = ScalarT(2) * p2 - p1;
+    } else p3 = points[pidx3];
     return CatmullRom(u, p0, p1, p2, p3, minVal, maxVal);
 }
 

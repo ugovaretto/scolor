@@ -44,7 +44,7 @@ Data ReadFile(string path,
     return make_tuple(buf, m, M);
 }
 
-std::vector< Vector3D< double > > ReadColors(std::istream& is) {
+std::vector< Vector3D< double > > ReadColors(std::istream& is, bool autonorm) {
     string buf;
     std::vector< Vector3D< double > > colors;
     while(is) {
@@ -65,19 +65,19 @@ std::vector< Vector3D< double > > ReadColors(std::istream& is) {
             color[0] = stoi(r, nullptr, 16) / 255.0;
         else {
             color[0] = stod(r);
-            if(color[0] > 1.0) color[0] /= 255.0;
+            if(autonorm && color[0] > 1.0) color[0] /= 255.0;
         }
         if(g.find("0x") == 0) 
             color[1] = stoi(g, nullptr, 16) / 255.0;
         else{
             color[1] = stod(g);
-            if(color[1] > 1.0) color[1] /= 255.0;
+            if(autonorm && color[1] > 1.0) color[1] /= 255.0;
         }
         if(b.find("0x") == 0) 
             color[2] = stoi(b, nullptr, 16) / 255.0;
         else {
             color[2] = stod(b);
-            if(color[2] > 1.0) color[2] /= 255.0;
+            if(autonorm && color[2] > 1.0) color[2] /= 255.0;
         }
         colors.push_back(color);
     }
@@ -105,12 +105,18 @@ string FrameNumToString(int f, int endFrame) {
 //------------------------------------------------------------------------------
 int main(int argc, char** argv) {
     if(argc < 8) {
-        std::cout << "usage: " 
+        std::cout << "\nusage: " 
                   << argv[0]
                   << "  <path> <prefix>"
                      "  <start frame #> <end frame #>"
-                     " <suffix> <width> <height> [-dist] "
+                     " <suffix> <width> <height> [-cubic] [-dist] "
                      "[-f filename [-csv] [-norm]] [-stat]\n";
+        std::cout << "-hsv: input is in HSV format\n" 
+                  << "-cubic: use Catmull-Rom interpolation, default is linear\n"
+                  << "-dist:  parameterization is proportional to (chord length)^2, default il uniform\n"
+                  << "-csv:   keyfranmes in csv format: t,R,G,B first line skipped\n"
+                  << "-norm:  force division by 255\n"
+                  << "-stat:  print min, max, num levels and value with max num levels\n";            
 
         return 1;
     }
@@ -128,6 +134,8 @@ int main(int argc, char** argv) {
     const bool csv = find(args.begin(), args.end(), "-csv") != args.end();
     const double norm = find(args.begin(), args.end(), "-norm") != args.end() ? 1./255. : 1.;
     const bool stat = find(args.begin(), args.end(), "-stat") != args.end();
+    const bool cubicInterpolation = find(args.begin(), args.end(), "-cubic") != args.end();
+    const bool hsv = find(args.begin(), args.end(), "-hsv") != args.end();
     vector< double > keyframes;
     if(find(args.begin(), args.end(), "-f") != args.end()
        && ++find(args.begin(), args.end(), "-f") != args.end()) {
@@ -140,7 +148,7 @@ int main(int argc, char** argv) {
             const KeyData kd = ReadColorsCSV(is, norm);
             colors = get< KEYFRAME::DATA >(kd);
             keyframes = get< KEYFRAME::KEYS >(kd);
-        } else colors = ReadColors(is);
+        } else colors = ReadColors(is, !hsv);
     } else { 
         std::vector< Vector3D< double > > scolors =
     //{{1,1,1}, {1, 1, 0}, {0, 1, 1}, {1, 0.5, 0.50}, {0, 0.5, 1}, {0.2, 0.4, 1}};
@@ -180,16 +188,38 @@ int main(int argc, char** argv) {
                  << mi->second  
                  << endl;
         }
-        const std::vector< ColorType > pic = 
-                            CRKScalarToRGB(get<DATASET>(data), 
-                                           colors, 
-                                           keys, 
-                                           double(255),
-                                           get<DATASET_MIN>(data),
-                                           get<DATASET_MAX>(data));
-                            //ScalarToRGB(data, colors, dist, 0.0, 1.0, 255.0);
-                            //LScalarToRGB(data, colors, keys, 255.0);
-                            //SLScalarToRGB(data, colors, 0.0, 1.0, 255.0);
+        const double normFactor = 255.0;
+        std::vector< ColorType > pic;
+        if(!hsv) {
+            pic = cubicInterpolation ?
+            CRKScalarToRGB(get<DATASET>(data), 
+                           colors, 
+                           keys, 
+                           normFactor,
+                           get<DATASET_MIN>(data),
+                           get<DATASET_MAX>(data))
+            : LScalarToRGB(get<DATASET>(data), 
+                           colors, 
+                           keys, 
+                           normFactor,
+                           get<DATASET_MIN>(data),
+                           get<DATASET_MAX>(data));
+                          
+        } else {
+            pic = cubicInterpolation ?
+            CRKScalarHSVToRGB(get<DATASET>(data), 
+                           colors, 
+                           keys, 
+                           normFactor,
+                           get<DATASET_MIN>(data),
+                           get<DATASET_MAX>(data))
+            : LScalarHSVToRGB(get<DATASET>(data), 
+                           colors, 
+                           keys, 
+                           normFactor,
+                           get<DATASET_MIN>(data),
+                           get<DATASET_MAX>(data));    
+        }
         const string outName = prefix + FrameNumToString(f, endFrame) + ".jpg";
         w.Save(width, height, outName.c_str(), pic);
     }

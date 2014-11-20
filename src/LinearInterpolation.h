@@ -7,22 +7,30 @@
 
 template < typename ScalarT >
 Vector3D< ScalarT >
-LinearInterpolation(const std::vector< Vector3D< ScalarT > >& data,
+LinearInterpolation(const std::vector< Vector3D< ScalarT > >& points,
                     const std::vector< ScalarT >& keys,
-                    ScalarT t ) {
+                    ScalarT t,
+                    ScalarT minVal,
+                    ScalarT maxVal ) {
     if(std::abs(t) < 10E-8) t = ScalarT(0);
-    assert(data.size() == keys.size());
-    if(t >= keys.back()) return data.back();
-    if(t <= keys.front()) return data.front(); 
-    using I = typename std::vector< ScalarT >::const_iterator;
-    I minv = std::lower_bound(keys.begin(), keys.end(), t);
-    I maxv = std::upper_bound(keys.begin(), keys.end(), t);
-    const std::size_t minidx = std::distance(keys.begin(), minv);
-    const std::size_t maxidx = std::distance(keys.begin(), maxv);
-    if(maxidx == minidx) return data[minidx];
-    const ScalarT u = (t - *minv) / (*maxv - *minv);
-    assert(u >= ScalarT(0) && u <= ScalarT(1));
-    return data[minidx] * (ScalarT(1) - u) + u * data[maxidx];
+    assert(points.size() == keys.size());
+    assert(maxVal >= minVal);
+    t = (t - minVal) / (maxVal - minVal);
+    using K = std::vector< ScalarT >;
+    typename K::const_iterator i = 
+                                  std::lower_bound(keys.begin(), keys.end(), t);
+
+    assert(i != keys.end());      
+    if(t < *i) --i;                        
+    typename K::const_iterator j = i;
+    ++j;
+    const ScalarT u = j == keys.end() ? ScalarT(0) : (t - *i) / (*j - *i);
+    using V = Vector3D< double >;
+    const std::size_t pidx0 = std::size_t(std::distance(keys.begin(), i));
+    const std::size_t pidx1 = std::min(points.size() - 1, pidx0 + 1);
+    const V& p0 = points[pidx0];
+    const V& p1 = points[pidx1];
+    return p0 * (ScalarT(1) - t) + p1 * t; 
 }
 
 template < typename ScalarT >
